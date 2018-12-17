@@ -51,4 +51,5 @@ do
 done < "./Processed/${company}.csv" > ./Processed/${company}_cleaned.csv
 
 echo "Inconsistent commas removed, check the header: ./Processed/${company}_cleaned.csv"
+rm -rf ./Processed/${company}.csv
 cat ./Processed/${company}_cleaned.csv
