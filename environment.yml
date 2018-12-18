@@ -1,7 +1,7 @@
 name: urop3.6
 channels:
-  - pytorch
   - conda-forge
+  - pytorch
   - defaults
 dependencies:
   - ca-certificates=2018.10.15=ha4d7672_0
@@ -136,4 +136,3 @@ dependencies:
     - torchvision==0.2.1
     - wrapt==1.10.11
 prefix: /home/asus/miniconda3/envs/urop3.6
-
