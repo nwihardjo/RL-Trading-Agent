@@ -12,8 +12,8 @@ addCompany="$(echo -e "${addCompany}" | tr -d '[:space:]')"
 echo "Reading company: $company and $addCompany"
 
 # CHANGE these absolute paths when necessary
-stagingPath="../new_data/.staging/"
-rawPath="../new_data/Raw/*/*/"
+stagingPath="../data/.staging/"
+rawPath="../data/Raw/*/*/"
 
 # if staging file already exist, no need to aggregate it all over again
 exist=false;
