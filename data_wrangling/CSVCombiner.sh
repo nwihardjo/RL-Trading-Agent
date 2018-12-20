@@ -14,6 +14,7 @@ echo "Reading company: $company and $addCompany"
 # CHANGE these absolute paths when necessary
 stagingPath="../data/.staging/"
 rawPath="../data/Raw/*/*/"
+headerPath="../data/Raw/2016_Data/01/"
 
 # if staging file already exist, no need to aggregate it all over again
 exist=false;
@@ -29,8 +30,7 @@ then
 	echo "The compiled csv for $company has already existed! Check $stagingPath"
 else
 	# retrieve the column headers, ASSUMING all the files have the same columns
-    # CHANGE the absolute path when necessary
-	head -1 ../new_data/Raw/2016_Data/01/${company}.csv > ${stagingPath}${company}.csv
+	head -1 ${headerPath}${company}.csv > ${stagingPath}${company}.csv
 
 	# */*/ is for (i.e.) 2015_Data/HK_1Min_201501
 	for file in ${rawPath}HK/${company}.csv
