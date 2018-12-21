@@ -1,23 +1,16 @@
-import quandl
 import pandas as pd
 import talib
 import numpy as np
 import os
 
 class StockEnv(object):
-    def __init__(self, instruments,
-                 api_key,
-                 capital_base=1e5,
+    def __init__(self, instruments, data_name, capital_base=1e5,
                  start_date='2015-01-01',
                  end_date=None,
-                 data_local_path='./new_data',
-                 re_download=True,
+                 data_local_path='./data/Processed',
                  commission_fee=5e-3,
                  normalize_length=10,
-                 data_name='market_data.pkl'
                  ):
-        self.api_key = api_key
-        quandl.ApiConfig.api_key = self.api_key
         self.instruments = instruments
         self.capital_base = capital_base
         self.commission_fee = commission_fee
@@ -25,7 +18,7 @@ class StockEnv(object):
         self.start_date = start_date
         self.end_date = end_date
         self.data_local_path = data_local_path
-        self.preprocessed_market_data, self.cleaned_market_data = self._init_market_data(data_name = data_name, re_download=re_download)
+        self.preprocessed_market_data, self.cleaned_market_data = self._init_market_data(data_name = data_name)
         self.pointer = normalize_length - 1
         self.done = (self.pointer == (self.preprocessed_market_data.shape[1] - 1))
 
@@ -102,22 +95,10 @@ class StockEnv(object):
         reward = last_weight[:-1] * log_return
         return reward
 
-    def _init_market_data(self, data_name='market_data.pkl', pre_process=True, re_download=False):
+    def _init_market_data(self, data_name='market_data.pkl', pre_process=True):
         data_path = self.data_local_path + '/' + data_name
-        if not os.path.exists(data_path) or re_download:
-            print('Start to download market data')
-            stocks = quandl.get_table('WIKI/PRICES', ticker=self.instruments,
-                                      qopts={'columns': ['ticker', 'date', 'adj_open', 'adj_close', 'adj_high', 'adj_low', 'adj_volume']},
-                                      date={'gte': self.start_date, 'lte': self.end_date}, paginate=True)
-            stock_groups = stocks.groupby('ticker')
-            stocks = {}
-            for k in stock_groups.groups.keys():
-                group = stock_groups.get_group(k)
-                group.index = group.date
-                stocks[k] = group[['adj_open', 'adj_close', 'adj_high', 'adj_low', 'adj_volume']]
-            market_data = pd.Panel(stocks).fillna(method='ffill').fillna(method='bfill').to_frame()
-            market_data.to_pickle(data_path)
-            print('Done')
+        if not os.path.exists(data_path):
+            print('market data does not exist in', self.data_local_path, '. double check, and follow instruction in ./data_wrangling directory')
         else:
             print('market data exist, loading')
             market_data = pd.read_pickle(data_path).fillna(method='ffill').fillna(method='bfill')
@@ -139,10 +120,7 @@ class StockEnv(object):
         cleaned_data = {}
         print(market_data.items)
         print(type(market_data))
-#         print(market_data.items())
-#         print(type(market_data))
         for c in market_data.items:
-
             columns = [open_c, close_c, high_c, low_c, volume_c]
             security = market_data[c, :, columns].fillna(method='ffill').fillna(method='bfill')
             security[volume_c] = security[volume_c].replace(0, np.nan).fillna(method='ffill')

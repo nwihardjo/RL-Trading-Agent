@@ -1,4 +1,4 @@
-from agent import Agent
+from model.agent import Agent
 import torch
 import torch.nn as nn
 import torch.optim as optim
