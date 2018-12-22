@@ -4,6 +4,10 @@ import numpy as np
 import os
 
 class StockEnv(object):
+    """
+    Environment which the trading agent is trained and perform trades. Controls the flow of the one-dimentional time-series states, manages information that is passed to and from the trading agent.
+    """
+
     def __init__(self, instruments, data_name, capital_base=1e5,
                  start_date='2015-01-01',
                  end_date=None,
@@ -11,6 +15,17 @@ class StockEnv(object):
                  commission_fee=5e-3,
                  normalize_length=10,
                  ):
+        """
+        Initialise the stock environment and its appropriate variable while clean and process the market data to be ready to be used to train the agent.
+        :param instruments: list of company code which stocks are used and trained
+        :param data_name: name of the pickle (serialised) file containing the stocks
+        :param capital_base: initial money possessed in the unit of the stock price
+        :param start_date: in the format of yyyy-mm-dd
+        :param end_date: in the format of yyyy-mm-dd
+        :param data_local_path: local path of which the processed and serialised data is located
+        :param commission_fee: fee calculated when making a tradeonsidered in the training data
+        :param normalize_length:
+        """
         self.instruments = instruments
         self.capital_base = capital_base
         self.commission_fee = commission_fee
@@ -33,6 +48,10 @@ class StockEnv(object):
         self.trade_dates = []
 
     def reset(self):
+        """
+        Reset the state, weights, and all variables of the environment to be the initial values
+        :return: return the normalised initial state, and whether it is done or not
+        """
         self.pointer = self.normalize_length
         self.current_position = np.zeros(len(self.instruments))
         self.current_portfolio_value = np.concatenate((np.zeros(len(self.instruments)), [self.capital_base]))
@@ -48,6 +67,11 @@ class StockEnv(object):
         return self._get_normalized_state(), self.done
 
     def step(self, action):
+        """
+        Calculate the reward, next state, values of the stock in possession, and all relevant variables after the desired weights is returned by the agent
+        :param action: matrix of the desired weights of the agent
+        :return: next state, reward caused by the action taken by the agent, and indication whether the state has reached its final state or not
+        """
         assert action.shape[0] == len(self.instruments) + 1
         assert np.sum(action) <= 1 + 1e5
         current_price = self.cleaned_market_data[:, :, 'adj_close'].iloc[self.pointer].values
@@ -61,6 +85,11 @@ class StockEnv(object):
         return state, reward, self.done
 
     def _rebalance(self, action, current_price):
+        """
+        Calculate the trade amount and keep track of the portfolio values, positions, and weights over time
+        :param action: matrix of the desired amount of portfolio in possession
+        :param current_price: closing price at the same state where the action is taken
+        """
         target_weight = action
         target_value = np.sum(self.current_portfolio_value) * target_weight
         target_position = target_value[:-1] / current_price
@@ -78,14 +107,27 @@ class StockEnv(object):
         self.trade_dates.append(self.current_date)
 
     def _get_normalized_state(self):
+        """
+        normalised the state between two different timepoints
+        :return: normalised state appended by the weights
+        """
         data = self.preprocessed_market_data.iloc[:, self.pointer + 1 - self.normalize_length:self.pointer + 1, :].values
         state = ((data - np.mean(data, axis=1, keepdims=True)) / (np.std(data, axis=1, keepdims=True) + 1e-5))[:, -1, :]
         return np.concatenate((state, self.current_weight[:-1][:, None]), axis=1)
 
     def get_meta_state(self):
+        """"
+        :return: price at the current state
+        """
         return self.preprocessed_market_data.iloc[:, self.pointer, :]
 
     def _get_reward(self, current_price, next_price):
+        """
+        calculate the reward based on the amount of the stocks in possession, with respect to the price at two different states
+        :param current_price: price at the current state
+        :param next_price: price at the next state
+        :return: reward from executing trade
+        """
         return_rate = (next_price / current_price)
         log_return = np.log(return_rate)
         last_weight = self.current_weight.copy()
@@ -96,6 +138,12 @@ class StockEnv(object):
         return reward
 
     def _init_market_data(self, data_name='market_data.pkl', pre_process=True):
+        """
+        load market data based on the local path and its file name, and initiate the processing and cleaning protocol of the market data
+        :param data_name: file name of the pickle (serialised) file containing the market data from one or several stocks
+        :param pre_process: boolean to indicate whether the data needs to be pre-processed in advance
+        :return: processed market data containing expanded data, and cleaned market data without features expansion
+        """
         data_path = self.data_local_path + '/' + data_name
         if not os.path.exists(data_path):
             print('market data does not exist in', self.data_local_path, '. double check, and follow instruction in ./data_wrangling directory')
@@ -109,6 +157,10 @@ class StockEnv(object):
         return processed_market_data, cleaned_market_data
 
     def get_summary(self):
+        """
+        return the historical value of portfolio value, positions, and weights that the trading agent made on all states
+        :return:  value of each portfolio value, positions, and weights in all states
+        """
         portfolio_value_df = pd.DataFrame(np.array(self.portfolio_values), index=np.array(self.trade_dates), columns=self.instruments + ['cash'])
         positions_df = pd.DataFrame(np.array(self.positions), index=np.array(self.trade_dates), columns=self.instruments)
         weights_df = pd.DataFrame(np.array(self.weights), index=np.array(self.trade_dates), columns=self.instruments + ['cash'])
@@ -116,6 +168,16 @@ class StockEnv(object):
 
     @staticmethod
     def _pre_process(market_data, open_c, high_c, low_c, close_c, volume_c):
+        """
+        make the data format consistent and check the integrity of the data
+        :param market_data: file containing market data
+        :param open_c: open price column name
+        :param high_c: high price column name
+        :param low_c: low price column name
+        :param close_c: close price column name
+        :param volume_c: volumn traded column name
+        :return: cleaned market data having expanded features and without expanded features
+        """
         preprocessed_data = {}
         cleaned_data = {}
         print(market_data.items)
@@ -133,6 +195,16 @@ class StockEnv(object):
 
     @staticmethod
     def _get_indicators(security, open_name, close_name, high_name, low_name, volume_name):
+        """
+        expand the features of the data through technical analysis across 26 different signals
+        :param security: data which features are going to be expanded
+        :param open_name: open price column name
+        :param close_name: close price column name
+        :param high_name: high price column name
+        :param low_name: low price column name
+        :param volume_name: traded volumn column name
+        :return: expanded and extracted data
+        """
         open_price = security[open_name].values
         close_price = security[close_name].values
         low_price = security[low_name].values
