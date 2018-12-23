@@ -5,6 +5,22 @@ import torch.optim as optim
 import numpy as np
 import os
 
+"""
+The Actor calss uses a GRU cell that produces the state before it is fed into the fully-connected layers.
+There are 2 fully connected layers defined by fc_policy_1 and fc_policy_2 as well as 2 different output layers 
+that are also linear layers defined by fc_policy_out and fc_cash_out. 
+
+To read how input data is fed into the network, we look at the forward function.
+State is produced as an ouput from the gru cell.
+This state is then passed through 2 fully-connected layers (fc_policy_1 and fc_policy2) with a ReLU activation function.
+Subsequently, state is passed to both fc_cash_out and fc_policy_out with sigmoid activations to produce
+two different outputs; cash and action respectively.
+
+After taking the cash average, the action is produced from the last two lines of the forward function.
+This resulting action is what is being called in both trade and train. During trading, 
+no weight update is being donce as torch.no_grad() prevents the network weights from being updated, thus, only during 
+training are the weights being updated.
+"""
 
 class Actor(nn.Module):
     def __init__(self, s_dim, b_dim, rnn_layers=1, dp=0.2):
