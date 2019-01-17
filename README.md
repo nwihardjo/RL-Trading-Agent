@@ -14,7 +14,7 @@ To use the your own data, replace and edit the data in the `./data/` directory.
 
 ## Dependencies
 
-Using [`conda`] (https://anaconda.org/) package manager, build the environment with `environment.yml`:
+Using [`conda`](https://anaconda.org/) package manager, build the environment with `environment.yml`:
 ```bash
 $ conda env create -f environment.yml
 ```
@@ -40,9 +40,9 @@ Clone the repo, and build virtual environment using `conda` for easier installat
 To install predecessor [`TA-Lib`](http://ta-lib.org/hdr_dw.html), refer [here](https://mrjbq7.github.io/ta-lib/install.html). 
 
 ## Contributor
-- [Nathaniel Wihardjo] (https://github.com/nwihardjo/)
-- [Hanif Dean] (https://github.com/hanifdean/)
-- [Kenneth Lee] (https://github.com/kenneth-id/)
+- [Nathaniel Wihardjo](https://github.com/nwihardjo/)
+- [Hanif Dean](https://github.com/hanifdean/)
+- [Kenneth Lee](https://github.com/kenneth-id/)
 
 ## Reference
 - (https://github.com/yuriak/RLQuant/)
